@@ -1,40 +1,52 @@
 import React from 'react';
-import { partialRight } from 'lodash';
-
-function onChange(event) {
-  var fileReader = new FileReader;
-  var file = event.target.files[0];
-
-  fileReader.onload = handleLoaded.bind(this, fileReader);
-
-  fileReader.readAsArrayBuffer(file);
-}
+import _ from 'lodash';
 
 function handleLoaded(fileReader) {
   var Audio = new window.AudioContext
 
+  var processor = Audio.createScriptProcessor();
+  var analyser = Audio.createAnalyser();
+
   Audio.decodeAudioData(fileReader.result)
-    .then(partialRight(processDecodedAudio.bind(this), Audio));
+    .then(processDecodedAudio(Audio, processor, analyser))
+    .then(start.bind(this))
+    .then(function(audioSource) {
+      this.setState({
+        audioSource
+      });
+    }.bind(this));
 }
 
-function processDecodedAudio(audioData, Audio) {
-  var analyser = Audio.createAnalyser();
-  var processor = Audio.createScriptProcessor();
-  processor.buffer = audioData;
-  analyser.connect(processor);
-  processor.connect(Audio.destination);
+function processDecodedAudio(Audio, processor, analyser) {
 
-  var source = _.assign(Audio.createBufferSource(), {
-    buffer: audioData,
-    loop: true
-  });
+  return function(audioData) {
+    processor.buffer = audioData;
 
-  source.connect(analyser);
-  source.connect(Audio.destination);
+    var audioSource = _.assign(Audio.createBufferSource(), {
+      buffer: audioData,
+      loop: true
+    });
+
+    return Promise.resolve({audioSource, processor, analyser});
+  };
+
+}
+
+function start({audioSource, processor, analyser}) {
+  wireGraph(audioSource, processor, analyser);
 
   processor.onaudioprocess = drawUpdate.bind(null, this.refs.canvas, analyser);
 
-  source.start();
+  audioSource.start();
+
+  return Promise.resolve(audioSource);
+}
+
+function wireGraph(audioSource, processor, analyser) {
+  audioSource.connect(analyser);
+  audioSource.connect(audioSource.context.destination);
+
+  processor.connect(audioSource.context.destination);
 }
 
 
@@ -74,20 +86,39 @@ function drawUpdate(canvas, analyser) {
   canvasCtx.stroke();
 }
 
-
-function wireGraph(nodes) {
-}
-
 export default class Analyser extends React.Component {
+  onTuneChange(event) {
+    if (!this.state.audioSource) {
+      return false;
+    }
+
+    this.state.audioSource.detune.value = event.target.value
+  }
+
+  onFileChange(event) {
+    var fileReader = new FileReader;
+    var file = event.target.files[0];
+
+    fileReader.onload = handleLoaded.bind(this, fileReader);
+
+    fileReader.readAsArrayBuffer(file);
+  }
+
   render () {
     return (
       <div>
         <input
           type="file"
-          onChange={onChange.bind(this)}
+          onChange={this.onFileChange.bind(this)}
           style={{
             display: 'block'
           }}
+        />
+        <input
+          type="range"
+          min="-500"
+          max="500"
+          onChange={this.onTuneChange.bind(this)}
         />
         <canvas ref="canvas" />
         {this.props.children}
