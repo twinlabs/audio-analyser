@@ -1,12 +1,14 @@
 import React from 'react';
+import decodeAudioData from './decodeAudioData';
+import createScriptProcessor from './createScriptProcessor';
 
 function handleLoaded(fileReader) {
-  var Audio = new window.AudioContext
+  var Audio = new (window.AudioContext || window.webkitAudioContext);
 
-  var processor = Audio.createScriptProcessor();
+  var processor = createScriptProcessor(Audio);
   var analyser = Audio.createAnalyser();
 
-  Audio.decodeAudioData(fileReader.result)
+  decodeAudioData.bind(Audio)(fileReader.result)
     .then(processDecodedAudio(Audio, processor, analyser))
     .then(start.bind(this))
     .then(function(audioSource) {
