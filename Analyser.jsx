@@ -1,5 +1,4 @@
 import React from 'react';
-import _ from 'lodash';
 
 function handleLoaded(fileReader) {
   var Audio = new window.AudioContext
@@ -22,7 +21,7 @@ function processDecodedAudio(Audio, processor, analyser) {
   return function(audioData) {
     processor.buffer = audioData;
 
-    var audioSource = _.assign(Audio.createBufferSource(), {
+    var audioSource = Object.assign(Audio.createBufferSource(), {
       buffer: audioData,
       loop: true
     });
