@@ -93,6 +93,10 @@ export default class Analyser extends React.Component {
       return false;
     }
 
+    if (!this.state.audioSource.detune) {
+      return false;
+    }
+
     this.state.audioSource.detune.value = event.target.value
   }
 
