@@ -4,7 +4,9 @@ import Analyser from './Analyser.jsx';
 
 ReactDOM.render(
   <div>
-    <Analyser />
+    <Analyser
+      detuneRange={2000}
+    />
   </div>
   ,
   document.getElementById('root')

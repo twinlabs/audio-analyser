@@ -117,8 +117,8 @@ export default class Analyser extends React.Component {
         />
         <input
           type="range"
-          min="-500"
-          max="500"
+          min={-this.props.detuneRange}
+          max={this.props.detuneRange}
           onChange={this.onTuneChange.bind(this)}
         />
         <canvas ref="canvas" />
